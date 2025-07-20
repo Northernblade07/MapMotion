@@ -7,7 +7,7 @@ const transformGeoJsonToRoute = (coordinates) => {
   return coordinates.map(([lng, lat], i) => ({
     latitude: lat,
     longitude: lng,
-    timestamp: new Date(Date.now() + i * 5000).toISOString()
+    timestamp: new Date(Date.now() + i * 2000).toISOString()
   }));
 };
 
@@ -109,7 +109,12 @@ function App() {
         speed={currentSpeed}
         distance={distanceCovered}
       />
-     
+      <MapView
+        routeData={routeData}
+        currentIndex={index}
+        speed={currentSpeed}
+        distance={distanceCovered}
+      />
     </div>
   );
 }
