@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-
 import L from "leaflet";
 import { useEffect, useMemo, useRef } from "react";
 import 'leaflet/dist/leaflet.css';
-import { Clock, Gauge, MapPin, MousePointer2 } from "lucide-react";
+import { Battery, Clock, Fuel, Gauge, KeySquareIcon, LockKeyhole, MapPin, MousePointer2, Snowflake } from "lucide-react";
 
 
 const MapFollower = ({ position }) => {
@@ -116,17 +116,26 @@ const MapView = ({ routeData, currentIndex ,speed,distance ,}) => {
         ref={markerRef}
       >
         <Popup >
-          <div className="text-sm flex flex-col items-center justify-center">
             <p className="flex text-green-400 bg-amber-50 border p-1 rounded-full items-center gap-2"> <Clock /><strong>Time:</strong> {new Date(currentPos.timestamp).toLocaleTimeString()}</p>
-            <div className="flex gap-2 items-center">
-                 <MapPin className="mb-2" />
-            <p><strong>Lat:</strong> {currentPos.latitude.toFixed(6)}</p>
-            <p><strong>Lng:</strong> {currentPos.longitude.toFixed(6)}</p>
+          <div className="text-sm flex flex-col items-center bg-amber-50 px-1 py-2 border border-amber-200 rounded-2xl justify-center">
+            <div className="flex flex-col items-center">
+                 <MapPin className="text-red-600" />
+                 <div className="flex items-center justify-around m-0 gap-4">
+            <p className="flex flex-col items-center"><strong>Lat:</strong> {currentPos.latitude.toFixed(6)}</p>
+            <p className="flex flex-col items-center"><strong>Lng:</strong> {currentPos.longitude.toFixed(6)}</p>
+                 </div>
             </div>
             <div className="flex gap-6">
 
-            <p className="flex flex-col items-center justify-center"><MousePointer2/><strong>Distance:</strong> {distance}</p>
-            <p className="flex flex-col items-center justify-center"><Gauge /><strong>Speed:</strong> {speed}m/s</p>
+            <p className="flex flex-col items-center justify-center"><MousePointer2 className=" text-purple-400"/><strong>Distance:</strong> {distance}</p>
+            <p className="flex flex-col items-center justify-center"><Gauge className="text-blue-400"/><strong>Speed:</strong> {speed}m/s</p>
+            </div>
+            <div className="flex gap-3 items-center justify-around text-orange-500">
+                <KeySquareIcon />
+                  <Battery />
+                    <Snowflake />
+                     <Fuel />
+                      <LockKeyhole />
             </div>
           </div>
         </Popup>

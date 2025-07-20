@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import MapView from './components/MapView';
 import Controllers from './components/Controllers';
+import RouteSelector from './components/RouteSelector';
 
 // Converts coordinates into animation-friendly format
 const transformGeoJsonToRoute = (coordinates) => {
   return coordinates.map(([lng, lat], i) => ({
     latitude: lat,
     longitude: lng,
-    timestamp: new Date(Date.now() + i * 2000).toISOString()
+    timestamp: new Date(Date.now() + i * 1000).toISOString()
   }));
 };
 
@@ -19,11 +20,24 @@ const fetchRouteFromOSRM = async (start, end) => {
   return transformGeoJsonToRoute(data.routes[0].geometry.coordinates);
 };
 
+const fetchAllRouteFromOSRM = async (start, end) => {
+  const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?alternatives=true&overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.routes.map((route, i) => ({
+    name: `Route ${i + 1}`,
+    data: transformGeoJsonToRoute(route.geometry.coordinates)
+  }));
+};
+
+
 function App() {
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [routeData, setRouteData] = useState([]);
-
+  // const [baseRoute, setBaseRoute] = useState([]);
+  const [allRoutes, setAllRoutes] = useState([]);
+const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
   const [origin] = useState({ lat: 17.3850, lng: 78.4867 }); // Hyderabad
   const [destination] = useState({ lat: 17.4933, lng: 78.4035 }); // Some point nearby
 
@@ -31,6 +45,7 @@ function App() {
   const startTime = new Date(routeData[0]?.timestamp || Date.now());
   const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
 
+  // Playback effect
   useEffect(() => {
     if (!isPlaying || index >= routeData.length - 1) return;
     const delay = new Date(routeData[index + 1].timestamp) - new Date(routeData[index].timestamp);
@@ -38,13 +53,26 @@ function App() {
     return () => clearTimeout(timeout);
   }, [isPlaying, index, routeData]);
 
+  // Stop playing at end of route
   useEffect(() => {
     if (index >= routeData.length - 1) {
       setIsPlaying(false);
     }
   }, [index, routeData.length]);
 
- 
+  // Handle route switching
+useEffect(() => {
+  if (allRoutes.length === 0) return;
+  const selected = allRoutes[selectedRouteIndex]?.data;
+  if (selected) {
+    setIsPlaying(false);
+    setIndex(0);
+    setRouteData(selected);
+  }
+}, [selectedRouteIndex, allRoutes]);
+
+
+  // Fetch base route on mount
   useEffect(() => {
     const fetchInitialRoute = async () => {
       const realRoute = await fetchRouteFromOSRM(origin, destination);
@@ -52,6 +80,15 @@ function App() {
     };
     fetchInitialRoute();
   }, [origin, destination]);
+
+  useEffect(() => {
+  const fetchRoutes = async () => {
+    const routes = await fetchAllRouteFromOSRM(origin, destination);
+    setAllRoutes(routes);
+  };
+  fetchRoutes();
+}, [origin, destination]);
+
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
     const toRad = (v) => v * Math.PI / 180;
@@ -92,11 +129,11 @@ function App() {
   const handleRestart = () => { setIsPlaying(false); setIndex(0); };
   const handleSeek = (value) => setIndex(value);
 
-  if (!routeData || routeData.length === 0) return <p className="text-center p-4">Loading route...</p>;
+  if (!routeData || routeData.length === 0)
+    return <p className="text-center p-4">Loading route...</p>;
 
   return (
     <div className="relative h-screen w-screen bg-gray-100">
-
       <Controllers
         isPlaying={isPlaying}
         onPlayPause={togglePlay}
@@ -109,6 +146,11 @@ function App() {
         speed={currentSpeed}
         distance={distanceCovered}
       />
+    <RouteSelector
+  options={allRoutes.map((r, i) => ({ label: r.name, value: i }))}
+  selected={selectedRouteIndex}
+  onSelect={(val) => setSelectedRouteIndex(parseInt(val))}
+/>
       <MapView
         routeData={routeData}
         currentIndex={index}
